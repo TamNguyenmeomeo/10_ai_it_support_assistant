@@ -262,137 +262,63 @@ with st.sidebar:
     lang = "en" if lang_opt == "English" else "vi"
     t = UI_LANG[lang]
 
-    # Theme Selection — persist via session_state so language change doesn't reset it
-    if "theme" not in st.session_state:
-        st.session_state["theme"] = "dark"  # default: dark
-
-    theme_options = [t["theme_dark"], t["theme_light"]]
-    theme_index = 0 if st.session_state["theme"] == "dark" else 1
-    theme_opt = st.selectbox(t["theme_label"], theme_options, index=theme_index)
-    st.session_state["theme"] = "dark" if theme_opt == t["theme_dark"] else "light"
-    theme = st.session_state["theme"]
-    
-    # Dynamic CSS based on Selected Theme
-    if theme == "light":
-        main_bg = "linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%)"
-        sidebar_bg = "linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)"
-        text_color = "#1e293b"
-        card_bg = "rgba(255, 255, 255, 0.75)"
-        card_border = "rgba(255, 255, 255, 0.3)"
-        card_shadow = "rgba(31, 38, 135, 0.05)"
-        header_bg = "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)"
-    else:
-        main_bg = "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)"
-        sidebar_bg = "linear-gradient(180deg, #0f172a 0%, #020617 100%)"
-        text_color = "#f1f5f9"
-        card_bg = "rgba(30, 41, 59, 0.7)"
-        card_border = "rgba(255, 255, 255, 0.1)"
-        card_shadow = "rgba(0, 0, 0, 0.3)"
-        header_bg = "linear-gradient(135deg, #312e81 0%, #4338ca 100%)"
-
-    st.markdown(f"""
+    # ── Hardcoded Dark Theme CSS ──
+    st.markdown("""
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
-        /* Typography */
-        html, body, [class*="css"], .stMarkdown, p, h1, h2, h3, h4, h5, h6, span, label {{
+        html, body, [class*="css"], .stMarkdown, p, h1, h2, h3, h4, h5, h6, span, label {
             font-family: 'Outfit', sans-serif;
-            {f'color: {text_color} !important;' if theme == 'dark' else ''}
-        }}
-
-        /* ── Main background (override Streamlit Cloud default) ── */
-        .stApp, .stApp > header, section.main, section.main > div, .block-container {{
-            background: {main_bg} !important;
-        }}
-
-        /* ── Sidebar background ── */
+            color: #f1f5f9;
+        }
+        /* Main background */
+        .stApp, .stApp > header, section.main,
+        section.main > div, .block-container {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+        }
+        /* Sidebar */
         [data-testid="stSidebar"],
         [data-testid="stSidebar"] > div:first-child,
-        [data-testid="stSidebarContent"] {{
-            background: {sidebar_bg} !important;
-        }}
-        /* Sidebar text color */
-        [data-testid="stSidebar"] * {{
-            color: {text_color};
-        }}
-
-        /* Elegant Header Banner */
-        .header-banner {{
-            background: {header_bg};
-            padding: 30px;
-            border-radius: 16px;
-            color: white !important;
-            margin-bottom: 25px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
-            text-align: center;
-        }}
-        .header-banner h1, .header-banner p {{
-            color: white !important;
-        }}
-        .header-banner h1 {{
-            font-weight: 800;
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-        }}
-        .header-banner p {{
-            font-weight: 300;
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }}
-        
-        /* Card design for results and tickets */
-        .glass-card {{
-            background: {card_bg};
-            backdrop-filter: blur(10px);
-            border: 1px solid {card_border};
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 8px 32px 0 {card_shadow};
+        [data-testid="stSidebarContent"] {
+            background: linear-gradient(180deg, #0f172a 0%, #020617 100%) !important;
+        }
+        [data-testid="stSidebar"] * { color: #f1f5f9 !important; }
+        /* Header banner */
+        .header-banner {
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+            padding: 30px; border-radius: 16px; color: white !important;
+            margin-bottom: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.15); text-align: center;
+        }
+        .header-banner h1, .header-banner p { color: white !important; }
+        .header-banner h1 { font-weight: 800; font-size: 2.5rem; margin-bottom: 10px; }
+        .header-banner p { font-weight: 300; font-size: 1.1rem; opacity: 0.9; }
+        /* Glass cards */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 16px;
+            padding: 20px; margin-bottom: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0,0,0,0.3);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }}
-        .glass-card:hover {{
-            transform: translateY(-2px);
-            box-shadow: 0 10px 35px 0 {card_shadow};
-        }}
-        .glass-card h4, .glass-card p, .glass-card b, .glass-card span {{
-            color: {text_color} !important;
-        }}
-        
+        }
+        .glass-card:hover { transform: translateY(-2px); }
+        .glass-card h4, .glass-card p, .glass-card b, .glass-card span { color: #f1f5f9 !important; }
         /* Badges */
-        .badge {{
-            padding: 6px 14px;
-            border-radius: 20px;
-            color: white !important;
-            font-weight: 600;
-            font-size: 12px;
-            display: inline-block;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }}
-        .badge-network {{ background: linear-gradient(135deg, #0d6efd, #0a58ca); }}
-        .badge-hardware {{ background: linear-gradient(135deg, #fd7e14, #d95f02); }}
-        .badge-software {{ background: linear-gradient(135deg, #198754, #146c43); }}
-        .badge-security {{ background: linear-gradient(135deg, #dc3545, #b02a37); }}
-        .badge-general {{ background: linear-gradient(135deg, #6c757d, #495057); }}
-        
-        /* Online/Offline indicators */
-        .status-container {{
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 15px;
-        }}
-        .status-dot {{
-            height: 12px;
-            width: 12px;
-            border-radius: 50%;
-            display: inline-block;
-        }}
-        .dot-online {{ background-color: #198754; box-shadow: 0 0 8px #198754; }}
-        .dot-offline {{ background-color: #dc3545; box-shadow: 0 0 8px #dc3545; }}
-        
-        .status-online {{ color: #198754 !important; font-weight: bold; }}
-        .status-offline {{ color: #dc3545 !important; font-weight: bold; }}
+        .badge {
+            padding: 6px 14px; border-radius: 20px; color: white !important;
+            font-weight: 600; font-size: 12px; display: inline-block;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .badge-network  { background: linear-gradient(135deg, #0d6efd, #0a58ca); }
+        .badge-hardware { background: linear-gradient(135deg, #fd7e14, #d95f02); }
+        .badge-software { background: linear-gradient(135deg, #198754, #146c43); }
+        .badge-security { background: linear-gradient(135deg, #dc3545, #b02a37); }
+        .badge-general  { background: linear-gradient(135deg, #6c757d, #495057); }
+        /* Status indicators */
+        .status-container { display: flex; align-items: center; gap: 8px; margin-bottom: 15px; }
+        .status-dot { height: 12px; width: 12px; border-radius: 50%; display: inline-block; }
+        .dot-online  { background-color: #198754; box-shadow: 0 0 8px #198754; }
+        .dot-offline { background-color: #dc3545; box-shadow: 0 0 8px #dc3545; }
+        .status-online  { color: #198754 !important; font-weight: bold; }
+        .status-offline { color: #dc3545 !important; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
     
