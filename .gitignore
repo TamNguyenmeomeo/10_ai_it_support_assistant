@@ -1,0 +1,25 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Large files and datasets
+*.xlsx
+downloaded_datasets/
+kaggle_dataset_dir/
+kaggle_kernel_dir/
+kernel_output_temp/
+outputs/
+huggingface_tokenizers_cache/
+qwen_it_assistant_model/
+qwen_it_assistant_model_gguf/
+*.log
+
+# Environments and IDEs
+.env
+.venv
+venv/
+ENV/
+.vscode/
+.idea/
+KaggleAPI/

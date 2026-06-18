@@ -1,0 +1,4 @@
+https://www.kaggle.com/code/paulojunqueira/it-ticket-classification-llama-3-1/notebook
+https://www.kaggle.com/datasets/tobiasbueck/helpdesk-github-tickets/data
+https://www.kaggle.com/datasets/adisongoh/it-service-ticket-classification-dataset
+https://www.kaggle.com/datasets/wcukierski/enron-email-dataset
