@@ -30,6 +30,31 @@ The light theme uses bright slate gray gradients and dark text for optimal reada
 
 ---
 
+## 📘 Detailed End-User Guide & Explanation
+
+This application is designed to behave like a **"smart virtual IT colleague"** sitting next to you to help diagnose and resolve computer issues. Here is a simple, detailed guide on how it works:
+
+### 1. How the AI IT Assistant Diagnoses Issues
+When you experience any computer problem (e.g., *"Cannot connect to Wi-Fi"*, *"Printer paper jam"*, or *"Windows blue screen error"*), you describe it in plain English or Vietnamese.
+*   **Searching Past IT Experience (RAG):** The system does not guess. First, it searches a **local database of 1,213 past real-world IT support tickets** to find cases that match your problem description.
+*   **Generating Custom Solutions (Local LLM):** Using the retrieved historical cases as context, it feeds the information to a Local AI Model (running on your machine) to write a step-by-step troubleshooting guide tailored to your hardware and OS.
+*   **Automatic Fix Scripts:** The AI automatically writes ready-to-run code snippets (like Windows PowerShell or Linux Bash scripts) so that you can fix the issue by simply copying and running the command.
+
+### 2. Benefits of Running Coconuts-Local (Local AI)
+*   **100% Data Privacy:** The AI runs entirely on your local machine via Ollama. It does **not require internet connectivity**, and your system logs, passwords, and sensitive company information are never uploaded to the cloud (unlike ChatGPT or Claude).
+*   **Offline Mode:** If your network goes down completely, you can still open this app to troubleshoot network adapters, routers, or other offline issues.
+
+### 3. Smart Fallback Mechanism
+*   If your system lacks a dedicated GPU or Ollama is not running, the dashboard automatically falls back to a **lightweight machine learning model** (Naive Bayes).
+*   This backup system classifies your issue into major categories (Hardware, Network, OS, Software) and provides a standard, offline checklist of troubleshooting steps.
+
+### 4. Step-by-Step Usage Guide
+1.  **Describe the Problem:** In the main text area, enter the computer issue you are experiencing.
+2.  **Read the Instructions:** Review the clear diagnostic steps provided by the AI.
+3.  **Run the Script:** If the AI generates a repair script (e.g., to clear the printer spooler or reset the IP stack), copy the script and run it in your computer's terminal (e.g., PowerShell as Administrator).
+
+---
+
 ## 🏗️ Architecture Design
 
 ```mermaid

@@ -30,6 +30,31 @@ Giao diện sáng sử dụng nền xám slate sáng và văn bản màu tối g
 
 ---
 
+## 📘 Giải nghĩa Tính năng & Hướng dẫn Sử dụng (Cho Người dùng cuối)
+
+Ứng dụng này được thiết kế giống như một **"đồng nghiệp IT thông minh"** hỗ trợ bạn xử lý mọi sự cố máy tính tại văn phòng hoặc tại nhà. Dưới đây là giải thích chi tiết về cách hoạt động của hệ thống theo cách dễ hiểu nhất:
+
+### 1. Trợ lý IT AI hoạt động như thế nào?
+Khi bạn gặp bất kỳ lỗi máy tính nào (ví dụ: *"Không kết nối được wifi"*, *"Máy in bị kẹt giấy"*, *"Lỗi màn hình xanh chết chóc"*), bạn chỉ cần nhập nội dung lỗi đó vào ứng dụng.
+*   **Tìm kiếm kinh nghiệm quá khứ (RAG):** Hệ thống không tự đoán mò. Đầu tiên, nó sẽ quét qua **cơ sở dữ liệu chứa 1.213 lịch sử lỗi IT** thực tế trước đây. Nó tìm ra các ca lỗi tương tự nhất, xem hồi đó các kỹ sư IT đã sửa như thế nào.
+*   **Đưa ra giải pháp tùy chỉnh (Local LLM):** Hệ thống lấy thông tin lỗi cũ làm tài liệu tham khảo, đưa cho Trợ lý AI (chạy trực tiếp trên máy tính của bạn) để AI tổng hợp thành một hướng dẫn sửa lỗi chi tiết, dành riêng cho trường hợp của bạn.
+*   **Tự động tạo mã sửa lỗi (Automation Scripts):** AI sẽ tự động viết sẵn các dòng lệnh (PowerShell cho Windows hoặc Bash cho Linux) để bạn chỉ việc copy và chạy là lỗi sẽ được sửa ngay lập tức.
+
+### 2. Ưu điểm vượt trội của việc chạy "Cục bộ" (Local AI)
+*   **Bảo mật 100%:** AI chạy hoàn toàn trên máy tính của bạn (thông qua phần mềm Ollama), **không cần kết nối Internet**. Toàn bộ mô tả lỗi, tài liệu nội bộ, thông tin mật của công ty bạn sẽ không bao giờ bị gửi lên mạng (như OpenAI hay Google), tránh hoàn toàn rủi ro rò rỉ dữ liệu.
+*   **Hoạt động Offline:** Kể cả khi công ty bị mất kết nối Internet hoàn toàn, bạn vẫn có thể mở phần mềm này lên để tra cứu cách sửa mạng hoặc sửa các lỗi phần cứng khác.
+
+### 3. Cơ chế dự phòng thông minh (Fallback System)
+*   Nếu máy tính của bạn không có card màn hình (GPU) mạnh hoặc chưa bật phần mềm Ollama, hệ thống sẽ tự động kích hoạt **"Trí tuệ nhân tạo dự phòng"** (Sử dụng thuật toán học máy Naive Bayes siêu nhẹ).
+*   Bộ dự phòng này sẽ chẩn đoán ngay lỗi của bạn thuộc nhóm nào (Phần cứng, Mạng, Hệ điều hành...) và cung cấp một danh sách các bước kiểm tra tiêu chuẩn để bạn tự khắc phục nhanh chóng.
+
+### 4. Hướng dẫn các bước sử dụng
+1.  **Nhập mô tả sự cố**: Tại ô nhập liệu chính, gõ lỗi bạn đang gặp phải bằng tiếng Anh hoặc tiếng Việt.
+2.  **Đọc giải pháp**: AI sẽ liệt kê rõ ràng nguyên nhân và các bước sửa cụ thể.
+3.  **Sao chép mã lệnh**: Nếu có phần lệnh Script tự động sửa lỗi, bạn chỉ cần nhấn nút sao chép và dán vào cửa sổ PowerShell (Administrator) trên máy tính để thực thi.
+
+---
+
 ## 🏗️ Sơ đồ Kiến trúc Hệ thống
 
 ```mermaid
