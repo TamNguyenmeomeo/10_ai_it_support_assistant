@@ -4,6 +4,8 @@ import urllib.request
 import json
 import streamlit as st
 import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.naive_bayes import MultinomialNB
@@ -420,31 +422,62 @@ with tab1:
     </div>
     """, unsafe_allow_html=True)
     
-    # Log Diagnostic Uplink
+    # Log Diagnostic Uplink — deep integration with Project 12 output
     st.markdown(f"##### {t['log_upload_label']}")
-    uploaded_file = st.file_uploader(t["log_upload_label"], type=["csv", "txt", "log"], label_visibility="collapsed", help=t["log_upload_help"])
-    
+    uploaded_file = st.file_uploader(t["log_upload_label"], type=["csv", "txt", "log"],
+                                     label_visibility="collapsed", help=t["log_upload_help"])
+
     log_context = ""
     if uploaded_file is not None:
         try:
             if uploaded_file.name.endswith(".csv"):
                 df_log = pd.read_csv(uploaded_file)
-                anomalies = []
-                if "is_anomaly" in df_log.columns:
-                    anomalies = df_log[df_log["is_anomaly"] == 1]
-                elif "level" in df_log.columns:
-                    anomalies = df_log[df_log["level"].isin(["ERROR", "CRITICAL", "ANOMALY"])]
-                
-                if len(anomalies) > 0:
-                    log_context = f"Detected Log Anomalies:\n"
-                    for _, row in anomalies.head(5).iterrows():
-                        log_context += f"- [{row.get('level', 'ERROR')}] service: {row.get('service', 'N/A')}, msg: {row.get('message', 'N/A')}, code: {row.get('status_code', 'N/A')}\n"
-                    st.success(t["log_detect_success"].format(len(anomalies)))
+                # ── Project 12 output columns: source, severity, response_time_ms, failure_rate, message, class
+                pro12_cols = {"source", "severity", "response_time_ms", "failure_rate", "message"}
+                if pro12_cols.issubset(set(df_log.columns)):
+                    # Detect anomalies via 'class' column (set by Project 12 Isolation Forest)
+                    anom_col = "class" if "class" in df_log.columns else None
+                    if anom_col:
+                        anomalies = df_log[df_log[anom_col].isin(["Anomaly", "Bất thường"])]
+                    else:
+                        # Fallback: high failure rate or very high latency
+                        anomalies = df_log[
+                            (df_log["failure_rate"] > 0.5) |
+                            (df_log["response_time_ms"] > df_log["response_time_ms"].quantile(0.97))
+                        ]
+                    if len(anomalies) > 0:
+                        # Group by source service for structured summary
+                        src_counts = anomalies["source"].value_counts().head(5)
+                        log_context = "🔬 Project 12 Anomaly Report:\n"
+                        log_context += f"Total anomalies: {len(anomalies)} | Avg failure rate: {anomalies['failure_rate'].mean():.1%} | Avg latency: {anomalies['response_time_ms'].mean():.0f}ms\n"
+                        log_context += "Affected services:\n"
+                        for svc, cnt in src_counts.items():
+                            top_msg = anomalies[anomalies["source"] == svc]["message"].iloc[0]
+                            log_context += f"  - {svc}: {cnt} anomalies | Example: {top_msg}\n"
+                        st.success(t["log_detect_success"].format(len(anomalies)))
+                        # Show mini summary table
+                        with st.expander("📊 Anomaly Summary Table"):
+                            st.dataframe(anomalies[["source","severity","response_time_ms","failure_rate","message"]].head(10),
+                                         use_container_width=True)
+                    else:
+                        log_context = "No anomalies detected in this Project 12 export."
+                        st.info(log_context)
                 else:
-                    log_context = f"Log content: " + ", ".join(df_log["message"].head(3).tolist())
+                    # Generic CSV parsing
+                    anomalies_generic = []
+                    if "is_anomaly" in df_log.columns:
+                        anomalies_generic = df_log[df_log["is_anomaly"] == 1]
+                    elif "level" in df_log.columns:
+                        anomalies_generic = df_log[df_log["level"].isin(["ERROR", "CRITICAL"])]
+                    if len(anomalies_generic) > 0:
+                        log_context = "Detected Log Errors:\n" + "\n".join(
+                            [f"- {row.get('message','N/A')}" for _, row in anomalies_generic.head(5).iterrows()])
+                        st.success(t["log_detect_success"].format(len(anomalies_generic)))
+                    else:
+                        log_context = "Log content: " + ", ".join(df_log.iloc[:, -1].head(3).astype(str).tolist())
             else:
                 lines = uploaded_file.read().decode("utf-8").splitlines()
-                errs = [l for l in lines if any(w in l.upper() for w in ["ERROR", "FAILED", "CRITICAL", "TIMEOUT", "EXCEPTION"])]
+                errs = [l for l in lines if any(w in l.upper() for w in ["ERROR","FAILED","CRITICAL","TIMEOUT","EXCEPTION"])]
                 if errs:
                     log_context = "Log File Failures:\n" + "\n".join(errs[:5])
                     st.success(t["log_detect_success"].format(len(errs[:5])))
@@ -673,34 +706,86 @@ with tab2:
                 st.error("Ticket ID does not exist.")
                 conn.close()
 
-# --- Tab 3: History & Past Queries ---
+# --- Tab 3: History & Analytics Dashboard ---
 with tab3:
     st.markdown(f"### {t['history_title']}")
-    
+
     conn = sqlite3.connect(DB_NAME)
-    df_hist = pd.read_sql_query("SELECT id, timestamp, user_issue, predicted_category, priority FROM ticket_history ORDER BY id DESC", conn)
+    df_hist = pd.read_sql_query(
+        "SELECT id, timestamp, user_issue, predicted_category, priority FROM ticket_history ORDER BY id DESC",
+        conn)
     conn.close()
-    
+
     if len(df_hist) == 0:
         st.info(t["history_empty"])
     else:
+        df_hist["timestamp"] = pd.to_datetime(df_hist["timestamp"])
+        df_hist["date"] = df_hist["timestamp"].dt.date
+
+        # ── Analytics Charts ──────────────────────────────────────────────────
+        col_a, col_b, col_c = st.columns(3)
+
+        with col_a:
+            cat_counts = df_hist["predicted_category"].value_counts().reset_index()
+            cat_counts.columns = ["Category", "Count"]
+            fig_bar = px.bar(
+                cat_counts, x="Category", y="Count", color="Category",
+                title="📂 Tickets by Category",
+                color_discrete_sequence=px.colors.qualitative.Bold,
+                template="plotly_dark"
+            )
+            fig_bar.update_layout(paper_bgcolor="rgba(0,0,0,0)",
+                                  plot_bgcolor="rgba(255,255,255,0.03)",
+                                  showlegend=False, height=300)
+            st.plotly_chart(fig_bar, use_container_width=True)
+
+        with col_b:
+            pri_counts = df_hist["priority"].value_counts().reset_index()
+            pri_counts.columns = ["Priority", "Count"]
+            color_map = {"High": "#ff6b6b", "Medium": "#ffd43b", "Low": "#51cf66"}
+            fig_pie = px.pie(
+                pri_counts, names="Priority", values="Count",
+                title="⚡ Priority Distribution",
+                color="Priority", color_discrete_map=color_map,
+                template="plotly_dark"
+            )
+            fig_pie.update_layout(paper_bgcolor="rgba(0,0,0,0)", height=300)
+            st.plotly_chart(fig_pie, use_container_width=True)
+
+        with col_c:
+            daily = df_hist.groupby("date").size().reset_index(name="Tickets")
+            fig_line = px.line(
+                daily, x="date", y="Tickets",
+                title="📅 Tickets Over Time",
+                markers=True, template="plotly_dark",
+                color_discrete_sequence=["#4facfe"]
+            )
+            fig_line.update_layout(paper_bgcolor="rgba(0,0,0,0)",
+                                   plot_bgcolor="rgba(255,255,255,0.03)", height=300)
+            st.plotly_chart(fig_line, use_container_width=True)
+
+        st.markdown("---")
+
+        # ── Detail expanders ─────────────────────────────────────────────────
+        st.markdown("#### 📋 Session Log")
         for idx, row in df_hist.iterrows():
-            with st.expander(f"[{row['timestamp']}] {row['predicted_category']} - Priority: {row['priority']}"):
-                st.write(f"**Issue Description:** {row['user_issue']}")
-                
-                # Retrieve full diagnostic report and script
+            with st.expander(
+                f"[{row['timestamp'].strftime('%Y-%m-%d %H:%M')}]  "
+                f"{row['predicted_category']}  —  Priority: **{row['priority']}**"
+            ):
+                st.write(f"**Issue:** {row['user_issue']}")
                 conn = sqlite3.connect(DB_NAME)
-                full_row = conn.execute("SELECT diagnostic_report, recovery_script FROM ticket_history WHERE id = ?", (int(row['id']),)).fetchone()
+                full_row = conn.execute(
+                    "SELECT diagnostic_report, recovery_script FROM ticket_history WHERE id = ?",
+                    (int(row["id"]),)).fetchone()
                 conn.close()
-                
                 if full_row:
-                    st.markdown("#### Diagnostic Report:")
+                    st.markdown("**Diagnostic Report:**")
                     st.markdown(full_row[0])
-                    st.markdown("#### Automated Script:")
+                    st.markdown("**Recovery Script:**")
                     st.code(full_row[1], language="powershell")
-                    
                     st.download_button(
-                        label=f"{t['export_report']} ({row['id']})",
+                        label=f"{t['export_report']} (#{row['id']})",
                         data=full_row[0],
                         file_name=f"IT_Report_{row['id']}.md",
                         mime="text/markdown",
